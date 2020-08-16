@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../AGBLENUKU/.idea/AGBLENUKU.iml" filepath="$PROJECT_DIR$/../AGBLENUKU/.idea/AGBLENUKU.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/EGATO.iml" filepath="$PROJECT_DIR$/.idea/EGATO.iml" />
+    </modules>
+  </component>
+</project>
