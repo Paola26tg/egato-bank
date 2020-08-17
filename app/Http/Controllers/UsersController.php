@@ -13,16 +13,14 @@ class UsersController extends Controller
     public function insertUser(Request $request){
 
         $validator = Validator::make($request->all(), [
-            'firstNameUser' => 'required|unique:users|max:255',
+            'firstNameUser' => 'bail|required|unique:users|max:255',
             'lastNameUser' => 'required|unique:users|max:255',
             'telUser' => 'required|numeric',
             'idRole' => 'required' ,
         ]);
-        if ($validator->fails()) {
-            return redirect('user/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
 
             $user = new User();
             $user->firstNameUser = $request->firstNameUser;
@@ -30,7 +28,8 @@ class UsersController extends Controller
             $user->telUser = $request->telUser;
             $user->idRole = $request->idRole;
 
-            return $user->save() ;
+        return json_encode([
+            'status' => $user->save() ? 200 : 404 ,]);
 
 }
     public function getUsers()
@@ -54,11 +53,9 @@ class UsersController extends Controller
             'telUser' => 'required|numeric',
             'idRole' => 'required' ,
         ]);
-        if ($validator->fails()) {
-            return redirect('user/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
         User::where('idUser', $request->idUser)->update($request);
         return view('');
     }
@@ -70,18 +67,17 @@ class UsersController extends Controller
             'idAccountCustomer' => 'required',
             'idUser' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('outerTransaction/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
 
         $outerTransaction = new OuterTransaction();
         $outerTransaction->idAccountCustomer = $request->idAccountCustomer;
         $outerTransaction->idUser = $request->idUser;
 
 
-        return $outerTransaction->save() ;
+        return json_encode([
+            'status' => $outerTransaction->save() ? 200 : 404 ,]);
 
     }
     public function getOuterTransaction()
@@ -103,11 +99,9 @@ class UsersController extends Controller
             'idAccountCustomer' => 'required',
             'idUser' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('outerTransaction/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
         OuterTransaction::where('idOuterTransaction', $request->idOuterTransaction)->update($request);
         return view('');
     }
@@ -119,17 +113,15 @@ class UsersController extends Controller
             'idAccountDepart' => 'required',
             'idAccountArrive' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('innerTransaction/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
 
         $innerTransaction = new InnerTransaction();
         $innerTransaction->idAccountDepart = $request->idAccountDepart;
         $innerTransaction->idAccountArrive = $request->idAccountArrive;
 
-        return $innerTransaction->save() ;
+         return json_encode([
+            'status' => $innerTransaction->save() ? 200 : 404 ,]);
 
     }
     public function getInnerTransactions()
@@ -151,11 +143,9 @@ class UsersController extends Controller
             'idAccountDepart' => 'required',
             'idAccountArrive' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('innerTransaction/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
         InnerTransaction::where('idInnerTransaction', $request->idInnerTransaction)->update($request);
         return view('');
     }

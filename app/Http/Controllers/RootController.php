@@ -20,24 +20,22 @@ class rootController extends Controller
     // CRUD AccountCustomer
     public function createAccountCustomer(Request $request){
         $validator = Validator::make($request->all(), [
-            'accountNumber' => 'required|unique:account_customers|max:255',
+            'accountNumber' => 'bail|required|unique:account_customers|max:255',
             'accountAmount' => 'required',
             'idCustomer' => 'required|integer',
             'idAgency' => 'required|integer' ,
         ]);
-        if ($validator->fails()) {
-            return redirect('accountCustomer/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
 
         $accountCustomer = new AccountCustomer();
         $accountCustomer->accountNumber = $request->accountNumber;
         $accountCustomer->accountAmount = $request->accountAmount;
         $accountCustomer->idCustomer = $request->idCustomer;
         $accountCustomer->idAgency = $request->idAgency;
-        $accountCustomer->save() ;
-        return view('');
+        return json_encode([
+            'status' => $accountCustomer->save() ? 200 : 404 ,]);
 
     }
 
@@ -55,16 +53,14 @@ class rootController extends Controller
 
     public function updateAccountCustomer(Request $request){
         $validator = Validator::make($request->all(), [
-            'accountNumber' => 'required|unique:account_customers|max:255',
+            'accountNumber' => 'bail|required|unique:account_customers|max:255',
             'accountAmount' => 'required',
             'idCustomer' => 'required|integer',
             'idAgency' => 'required|integer' ,
         ]);
-        if ($validator->fails()) {
-            return redirect('accountCustomer/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
         AccountCustomer::where('idAccountCustomer', $request->idAccountCustomer)->update($request);
 
         return view('');
@@ -78,16 +74,15 @@ class rootController extends Controller
             'generateAmount' => 'required',
 
         ]);
-        if ($validator->fails()) {
-            return redirect('accountCompany/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
         $accountCompany = new AccountCompany();
         $accountCompany->idAccountCustomer = $request->idAccountCustomer;
         $accountCompany->generateAmount = $request->generateAmount;
         $accountCompany->save();
-        return view('');
+        return json_encode([
+            'status' => $accountCompany->save() ? 200 : 404 ,]);
     }
 
     public function getAccountCompanies(){
@@ -100,11 +95,9 @@ class rootController extends Controller
             'accountNumber' => 'required|unique:account_customers|max:255',
             'accountAmount' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('accountCompany/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors())->withInput();
+
         AccountCustomer::where('idAccountCompany', $request->idAccountCompany)->update($request);
 
         return view('');
@@ -121,15 +114,13 @@ class rootController extends Controller
     // CRUD Agency
     public function createAgency(Request $request){
         $validator = Validator::make($request->all(), [
-            'nameAgency' => 'required|unique:agencies|max:255',
+            'nameAgency' => 'bail|required|unique:agencies|max:255',
             'codeAgency' => 'required|unique:agencies|max:255',
             'idCountry' => 'required|integer',
             'idCity' => 'required|integer' ,
         ]);
         if ($validator->fails()) {
-            return redirect('agency/create')
-                ->withErrors($validator)
-                ->withInput();
+            return back()->withErrors($validator->errors()->first())->withInput();
         }
 
         $agency = new Agency();
@@ -138,7 +129,8 @@ class rootController extends Controller
         $agency->idCountry = $request->idCountry;
         $agency->idCity = $request->idCity;
         $agency->save() ;
-        return view('');
+        return json_encode([
+            'status' => $agency->save() ? 200 : 404 ,]);
     }
 
     public function updateAgency(Request $request){
@@ -149,9 +141,7 @@ class rootController extends Controller
             'idCity' => 'required',
         ]);
         if ($validator->fails()) {
-            return redirect('agency/update')
-                ->withErrors($validator)
-                ->withInput();
+            return back()->withErrors($validator->errors()->first())->withInput();
         }
         Agency::where('idAgency', $request->idAgency)->update($request);
 
@@ -178,17 +168,15 @@ class rootController extends Controller
             'idAgency' => 'required|integer',
             'idUser' => 'required|integer' ,
         ]);
-        if ($validator->fails()) {
-            return redirect('agencyUser/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
 
         $agencyUser = new AgencyUser();
         $agencyUser->idAgency = $request->idAgency;
         $agencyUser->idUser = $request->idUser;
         $agencyUser->save() ;
-        return view('');
+        return json_encode([
+            'status' => $agencyUser->save() ? 200 : 404 ,]);
     }
 
     public function updateAgencyUser(Request $request){
@@ -479,14 +467,12 @@ class rootController extends Controller
 
     public function updateRole(Request $request){
         $validator = Validator::make($request->all(), [
-            'roleName' => 'required|unique:roles|255',
+            'roleName' => 'bail|required|unique:roles|255',
             'roleLevel' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('role/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
+
         Role::where('idRole', $request->idRole)->update($request);
 
         return view('');

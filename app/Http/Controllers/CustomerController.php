@@ -10,7 +10,7 @@ class CustomerController extends Controller
 {
     public function  storeCustomer(Request $request){
         $validator = Validator::make($request->all(), [
-            'firstName' => 'required|unique:customers|max:255',
+            'firstName' => 'bail|required|unique:customers|max:255',
             'lastName' => 'required|unique:customers|max:255',
             'password' => 'required|max:255',
             'phoneCustomer' => 'required|numeric',
@@ -19,14 +19,11 @@ class CustomerController extends Controller
             'idCountry' => 'required|integer',
             'idCity' => 'required|integer'
         ]);
-        if ($validator->fails()) {
-            return redirect('customer/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails())
+            return back()->withErrors($validator->errors()->first())->withInput();
             $customer = new Customer();
             $customer->firstName = $request->firstName;
-            $customer->lastName = $request->firstName;
+            $customer->lastName = $request->lastName;
             $customer->password = $request->password;
             $customer->phoneCustomer = $request->phoneCustomer;
             $customer->email = $request->email;
@@ -35,7 +32,8 @@ class CustomerController extends Controller
             $customer->idCity = $request->idCity;
 
 
-            return $customer->save() ;
+        return json_encode([
+            'status' => $customer->save() ? 200 : 404 ,]);
 
     }
 
@@ -53,18 +51,15 @@ class CustomerController extends Controller
 
     public function updateCustomer(Request $request){
         $validator = Validator::make($request->all(), [
-            'firstName' => 'required|unique:customers|max:255',
+            'firstName' => 'bail|required|unique:customers|max:255',
             'lastName' => 'required|unique:customers|max:255',
             'password' => 'required|max:255',
             'phoneCustomer' => 'required|numeric',
             'email' => 'required|email',
             'addressCustomer' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('customer/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        if ($validator->fails()) return back()->withErrors($validator->errors()->first())->withInput();
+
         Customer::where('idCustomer', $request->idCustomer)->update($request);
 
         return view('');
@@ -76,5 +71,8 @@ class CustomerController extends Controller
 
         return view('');
     }
+  public function getAccess(Request $request){
+
+  }
 
 }
