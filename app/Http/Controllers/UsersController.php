@@ -11,53 +11,64 @@ use Illuminate\Support\Facades\Validator;
 class UsersController extends Controller
 {
     public function insertUser(Request $request){
-
+      $messages = [
+          'firstNameUser.required' => 'le prénom d\'utilisateur est invalide',
+          'lastNameUser.required' =>'le nom d\'utilisateur est invalide',
+          'telUser.required' => 'numéro de telephone est invalide',
+          'telUser.unique' =>  'numéro de telephone est existant',
+      ];
         $validator = Validator::make($request->all(), [
-            'firstNameUser' => 'bail|required|unique:users|max:255',
-            'lastNameUser' => 'required|unique:users|max:255',
-            'telUser' => 'required|numeric',
+            'firstNameUser' => 'bail|required|max:255',
+            'lastNameUser' => 'required|max:255',
+            'telUser' => 'required|unique:users|numeric',
             'idRole' => 'required' ,
-        ]);
+        ],$messages);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
-
-            $user = new User();
+        $user = new User();
             $user->firstNameUser = $request->firstNameUser;
             $user->lastNameUser = $request->firstNameUser;
             $user->telUser = $request->telUser;
             $user->idRole = $request->idRole;
 
         return json_encode([
-            'status' => $user->save() ? 200 : 404 ,]);
+            'status' =>200,
+             'utilisateur enrégistré' =>  $user->save()]);
 
 }
     public function getUsers()
     {
         $users = User::all();
-        return view('')->withUsers($users);
+        return $users;
     }
 
-    public function deleteUser(Request $request){
+    public function deleteUser($id){
 
-        $user = User::findOrFail($request->idUser);
+        $user = User::findOrFail($id);
         $user->delete();
-
-        return view('');
+        echo 'Utilisateur supprimé';
     }
 
-    public function updateUser(Request $request){
+    public function updateUser(Request $request, $id){
+        $messages = [
+          'telUser.unique' =>  'numéro de telephone est existant',
+            ];
         $validator = Validator::make($request->all(), [
-            'firstNameUser' => 'required|unique:users|max:255',
-            'lastNameUser' => 'required|unique:users|max:255',
-            'telUser' => 'required|numeric',
-            'idRole' => 'required' ,
-        ]);
+            'telUser' => 'unique:users|numeric',
+        ],$messages);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
-
-        User::where('idUser', $request->idUser)->update($request);
-        return view('');
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+        return json_encode([
+            'status' => 200,
+            'utilisateur modifié'=>   User::where('idUser', $id)->update($request->all())
+        ]);
     }
 
     // CRUD OuterTransaction
@@ -68,86 +79,88 @@ class UsersController extends Controller
             'idUser' => 'required',
         ]);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
-
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
         $outerTransaction = new OuterTransaction();
         $outerTransaction->idAccountCustomer = $request->idAccountCustomer;
         $outerTransaction->idUser = $request->idUser;
-
-
         return json_encode([
-            'status' => $outerTransaction->save() ? 200 : 404 ,]);
+            'status' =>200,
+            'success'=>$outerTransaction ]);
 
     }
-    public function getOuterTransaction()
+    public function getOuterTransactions()
     {
-        $outerTransaction = OuterTransaction::all();
-        return view('')->withOuterTransaction($outerTransaction);
+        $outerTransaction = OuterTransaction::orderByDesc('created_at')->get();
+        return $outerTransaction;
     }
 
-    public function deleteOuterTransaction(Request $request){
+    public function getOuterTransactionById($id)
+    {
+        $outerTransaction = OuterTransaction::find($id);
+        if(is_null($outerTransaction))
+            return json_encode([
+                'status' => 404,
+                'error' => 'transaction introuvable '
+            ]);
+        return $outerTransaction;
+    }
 
-        $outerTransaction = OuterTransaction::findOrFail($request->idOuterTransaction);
+    public function deleteOuterTransaction($id){
+
+        $outerTransaction = OuterTransaction::find($id);
         $outerTransaction->delete();
-
-        return view('');
-    }
-
-    public function updateOuterTransaction(Request $request){
-        $validator = Validator::make($request->all(), [
-            'idAccountCustomer' => 'required',
-            'idUser' => 'required',
-        ]);
-        if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
-
-        OuterTransaction::where('idOuterTransaction', $request->idOuterTransaction)->update($request);
-        return view('');
+        echo'Transaction supprimé';
     }
 
     // CRUD InnerTransaction
     public function createInnerTransaction(Request $request){
-
         $validator = Validator::make($request->all(), [
             'idAccountDepart' => 'required',
             'idAccountArrive' => 'required',
         ]);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+
 
         $innerTransaction = new InnerTransaction();
         $innerTransaction->idAccountDepart = $request->idAccountDepart;
         $innerTransaction->idAccountArrive = $request->idAccountArrive;
 
          return json_encode([
-            'status' => $innerTransaction->save() ? 200 : 404 ,]);
+            'status' => 200,
+             'success' => $innerTransaction->save() ]);
 
     }
-    public function getInnerTransactions()
+    public function getInnerTransaction()
     {
-        $innerTransactions = InnerTransaction::all();
-        return view('')->withInnerTransactions($innerTransactions);
+        $innerTransaction = InnerTransaction::orderByDesc('created_at')->get();
+        return $innerTransaction;
+    }
+    public function getInnerTransactionById($id)
+    {
+        $innerTransactions = InnerTransaction::find($id);
+        if(is_null($innerTransactions))
+        return json_encode([
+            'status' => 404,
+            'error' => 'le compte est introuvable '
+        ]);
+        return $innerTransactions;
     }
 
-    public function deleteInnerTransaction(Request $request){
+    public function deleteInnerTransaction($id){
 
-        $innerTransaction = InnerTransaction::findOrFail($request->idInnerTransaction);
+        $innerTransaction = InnerTransaction::find($id);
         $innerTransaction->delete();
 
-        return view('');
+        echo 'Transaction supprimée';
     }
 
-    public function updateInnerTransaction(Request $request){
-        $validator = Validator::make($request->all(), [
-            'idAccountDepart' => 'required',
-            'idAccountArrive' => 'required',
-        ]);
-        if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
-
-        InnerTransaction::where('idInnerTransaction', $request->idInnerTransaction)->update($request);
-        return view('');
-    }
 
 }

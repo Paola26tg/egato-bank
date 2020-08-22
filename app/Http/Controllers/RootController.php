@@ -19,15 +19,22 @@ class rootController extends Controller
 {
     // CRUD AccountCustomer
     public function createAccountCustomer(Request $request){
+        $messages = [
+            'accountNumber.required' => 'le numéro de compte est invalide',
+            'accountNumber.unique' => 'le numéro de compte existe déja',
+            'accountAmount.required' => 'le montant  est invalide'
+        ];
         $validator = Validator::make($request->all(), [
             'accountNumber' => 'bail|required|unique:account_customers|max:255',
             'accountAmount' => 'required',
             'idCustomer' => 'required|integer',
             'idAgency' => 'required|integer' ,
-        ]);
+        ], $messages);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
-
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
         $accountCustomer = new AccountCustomer();
         $accountCustomer->accountNumber = $request->accountNumber;
@@ -35,92 +42,127 @@ class rootController extends Controller
         $accountCustomer->idCustomer = $request->idCustomer;
         $accountCustomer->idAgency = $request->idAgency;
         return json_encode([
-            'status' => $accountCustomer->save() ? 200 : 404 ,]);
+            'status' => 200,
+            'success' => $accountCustomer->save()]);
 
     }
 
     public function getAccountCustomers(){
-        $accountCustomers = AccountCustomer::all();
-        return view('')->withAccountCustomers($accountCustomers);
+        $accountCustomers = AccountCustomer::orderByDesc('created_at')->get();
+        return $accountCustomers;
 
     }
+    public function getAccountCustomerById($id){
+        $accountCustomer = AccountCustomer::find($id);
+        if(is_null($accountCustomer))
+            return json_encode([
+                'status' => 404,
+                'error' => 'le compte est introuvable '
+                ]);
+        return $accountCustomer;
 
-    public function deleteAccountCustomer(Request $request){
-        $accountCustomer = Customer::findOrFail($request->idAccountCustomer);
+    }
+    public function deleteAccountCustomer($id){
+        $accountCustomer = AccountCustomer::find($id);
         $accountCustomer->delete();
-        return view('');
+        echo 'le compte client a été supprimé';
     }
 
-    public function updateAccountCustomer(Request $request){
+    public function updateAccountCustomer(Request $request, $id)
+    {
+        $messages = [
+            'accountNumber.unique' => 'le numéro de compte existe déja',
+        ];
+
         $validator = Validator::make($request->all(), [
-            'accountNumber' => 'bail|required|unique:account_customers|max:255',
-            'accountAmount' => 'required',
-            'idCustomer' => 'required|integer',
-            'idAgency' => 'required|integer' ,
+            'accountNumber' => 'unique:account_customers|max:255',
         ]);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
+            return json_encode(['status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+        return json_encode([
+            'status' => 200,
+            'success' => AccountCustomer::where('idAccountCustomer', $id)->update($request->all())
+        ]);
 
-        AccountCustomer::where('idAccountCustomer', $request->idAccountCustomer)->update($request);
-
-        return view('');
     }
 
-
     // CRUD AccountCompany
-    public function createAccountCompany(Request $request){
+   public function createAccountCompany(Request $request){
+       $messages = [
+           'generateAmount.required' => 'le montant géneré est invalide'
+       ];
+
         $validator = Validator::make($request->all(), [
             'idAccountCustomer' => 'required|integer',
             'generateAmount' => 'required',
 
-        ]);
+        ],$messages);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
         $accountCompany = new AccountCompany();
         $accountCompany->idAccountCustomer = $request->idAccountCustomer;
         $accountCompany->generateAmount = $request->generateAmount;
-        $accountCompany->save();
         return json_encode([
-            'status' => $accountCompany->save() ? 200 : 404 ,]);
+            'status' => 200,
+             'success' => $accountCompany->save() ]);
     }
 
     public function getAccountCompanies(){
         $accountCompanies = AccountCompany::all();
-        return view('')->withAccontCompanies($accountCompanies);
+        return $accountCompanies;
     }
 
-    public function updateAccountCompany(Request $request){
+    public function updateAccountCompany(Request $request, $id){
+        $messages = [
+            'generateAmount.required' => 'le montant géneré est invalide'
+        ];
         $validator = Validator::make($request->all(), [
-            'accountNumber' => 'required|unique:account_customers|max:255',
-            'accountAmount' => 'required',
-        ]);
+            'generateAmount' => 'required',
+        ], $messages);
         if ($validator->fails())
-            return back()->withErrors($validator->errors())->withInput();
+             return json_encode(['status' => 500,
+            'error' => $validator->errors()->first()
+                 ]);
 
-        AccountCustomer::where('idAccountCompany', $request->idAccountCompany)->update($request);
-
-        return view('');
+        return json_encode([
+            'status' => 200,
+            'success' => AccountCompany::where('idAccountCompany', $id)->update($request->all())
+            ]);
     }
 
-    public function deleteAccountCompany(Request $request){
+    public function deleteAccountCompany($id){
 
-        $accountCompany = AccountCompany::findOrFail($request->idAccountCompany);
+        $accountCompany = AccountCompany::find($id);
         $accountCompany->delete();
-
-        return view('');
+        echo 'le compte compagnie  a été supprimé';
     }
 
     // CRUD Agency
     public function createAgency(Request $request){
+        $messages = [
+        'nameAgency.required' => 'le nom de l\' agence est invalide',
+            'nameAgency.unique' => 'le nom de l\' agence est existe déja',
+        'codeAgency.required' => 'le code de l\' agence est invalide',
+        'codeAgency.unique' => 'le code de l\' agence est existe déja'
+    ];
+
         $validator = Validator::make($request->all(), [
             'nameAgency' => 'bail|required|unique:agencies|max:255',
             'codeAgency' => 'required|unique:agencies|max:255',
             'idCountry' => 'required|integer',
             'idCity' => 'required|integer' ,
-        ]);
+        ],$messages);
         if ($validator->fails()) {
-            return back()->withErrors($validator->errors()->first())->withInput();
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+              ]);
         }
 
         $agency = new Agency();
@@ -128,12 +170,12 @@ class rootController extends Controller
         $agency->codeAgency = $request->codeAgency;
         $agency->idCountry = $request->idCountry;
         $agency->idCity = $request->idCity;
-        $agency->save() ;
         return json_encode([
-            'status' => $agency->save() ? 200 : 404 ,]);
+            'status' => 200,
+            'success' => $agency->save()]);
     }
 
-    public function updateAgency(Request $request){
+    public function updateAgency(Request $request, $id){
         $validator = Validator::make($request->all(), [
             'nameAgency' => 'required|unique:agencies|max:255',
             'codeAgency' => 'required|unique:agencies|max:255',
@@ -141,25 +183,27 @@ class rootController extends Controller
             'idCity' => 'required',
         ]);
         if ($validator->fails()) {
-            return back()->withErrors($validator->errors()->first())->withInput();
+            return json_encode(['status' => 500,
+                'error' => $validator->errors()->first()
+                ]);
         }
-        Agency::where('idAgency', $request->idAgency)->update($request);
 
-        return view('');
+        return json_encode([
+            'status' => 200,
+            'success' => Agency::where('idAgency', $id)->update($request->all())
+        ]);
     }
 
     public function getAgencies(){
         $agencies = Agency::all();
-        return view('')->withAgencies($agencies);
+        return $agencies;
 
     }
 
-    public function deleteAgency(Request $request){
-        $agency = Agency::findOrFail($request->idAgency);
+    public function deleteAgency($id){
+        $agency = Agency::find($id);
         $agency->delete();
-
-        return view('');
-
+       echo 'l\'agence a été supprimé';
     }
 
     // CRUD AgencyUser
@@ -169,319 +213,396 @@ class rootController extends Controller
             'idUser' => 'required|integer' ,
         ]);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
-
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+      ]);
         $agencyUser = new AgencyUser();
         $agencyUser->idAgency = $request->idAgency;
         $agencyUser->idUser = $request->idUser;
-        $agencyUser->save() ;
         return json_encode([
-            'status' => $agencyUser->save() ? 200 : 404 ,]);
+            'status' => 200,
+               'success' => $agencyUser->save() ]);
     }
 
-    public function updateAgencyUser(Request $request){
+    public function updateAgencyUser(Request $request,$id){
         $validator = Validator::make($request->all(), [
             'idAgency' => 'required',
             'idUser' => 'required',
         ]);
-        if ($validator->fails()) {
-            return redirect('agencyUser/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
-        AgencyUser::where('idAgencyUser', $request->idAgencyUser)->update($request);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
-        return view('');
+        return json_encode([
+            'status' => 200,
+            'success' =>  AgencyUser::where('idAgencyUser', $id)->update($request->all())
+        ]);
     }
 
     public function getAgencyUser(){
         $agencyUsers = AgencyUser::all();
-        return view('')->withAgencyUsers($agencyUsers);
+        return $agencyUsers;
     }
 
-    public function deleteAgencyUser(Request $request){
-        $agencyUser = AgencyUser::findOrFail($request->idAgencyUser);
+    public function deleteAgencyUser(Request $request,$id){
+        $agencyUser = AgencyUser::find($id);
         $agencyUser->delete();
-
-        return view('');
     }
 
     // CRUD Country
     public function createCountry(Request $request){
+        $messages = [
+           'countryName.required' => 'le nom du pays est invalide',
+            'countryName.unique' => 'le nom du pays existe déja',
+            'codeNameCountry.required' => 'le nom de code du pays est invalide',
+            'codeNameCountry.unique' => 'le nom de code du pays existe déjà',
+            'countryCode.required' => 'le code pays est invalide'
+
+        ];
         $validator = Validator::make($request->all(), [
-            'nameCountry' => 'required|unique:countries|max:255',
+            'countryName' => 'bail|required|unique:countries|max:255',
             'codeNameCountry' => 'required|unique:countries|max:255',
             'countryCode' => 'required|max:10',
-        ]);
-        if ($validator->fails()) {
-            return redirect('country/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        ], $messages);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
         $country = new Country();
-        $country->nameCountry = $request->nameCountry;
-        $country->codeNameCountry = $request->codeNameCountry;
-        $country->countryCode = $request->countryCode;
-        $country->save() ;
-        return view('');
+        $country->countryName = $request->input('countryName');
+        $country->codeNameCountry = $request->input('codeNameCountry');
+        $country->countryCode = $request->input('countryCode');
+        return json_encode([
+            'status' => 200 ,
+            'success' => $country->save()
+            ]);
     }
+
     public function getCountries(){
     $countries = Country::all();
-    return view('')->withCountries($countries);
+    return $countries;
     }
 
-    public function updateCountry(Request $request){
+    public function findCountry($id){
+        $country = Country::where('idCountry', $id)->get()->first();
+        return $country;
+    }
+
+    public function updateCountry(Request $request, $id){
+        $messages = [
+            'countryName.unique' => 'le nom du pays existe déja',
+            'codeNameCountry.unique' => 'le nom de code du pays existe déjà',
+        ];
         $validator = Validator::make($request->all(), [
-            'nameCountry' => 'required|unique:countries|max:255',
-            'codeNameCountry' => 'required|unique:countries|max:255',
-            'countryCode' => 'required|max:10',
-        ]);
-        if ($validator->fails()) {
-            return redirect('country/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
-        Country::where('idCountry', $request->idCountry)->update($request);
+            'countryName' => 'unique:countries|max:255',
+            'codeNameCountry' => 'unique:countries|max:255',
+            'countryCode' => 'max:10',
+        ], $messages);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
-        return view('');
+            return json_encode([
+                'status' => 200,
+                'success' => Country::where('idCountry', $id)->update($request->all())
+            ]) ;
     }
-    public function deleteCountry(Request $request){
-     $country = Country::where('idCountry', $request->idCountry)->get();
+    public function deleteCountry(Country $country){
      $country->delete();
     }
 
     // CRUD City
     public function createCity(Request $request){
+        $messages = [
+            'nameCity.required' => 'le nom de la ville est invalide',
+            'nameCity.unique' => 'le nom de la ville existe déja',
+            'latitude.required' => 'la latitude de la ville est invalide',
+            'latitude.unique' => 'la latitude de la ville existe déjà',
+            'longitude.required' => 'la longitude de la ville est invalide',
+            'longitude.unique' => 'la longitude de la ville  existe déjà'
+
+        ];
+
         $validator = Validator::make($request->all(), [
-            'nameCity' => 'required|unique:cities|max:255',
+            'nameCity' => 'bail|required|unique:cities|max:255',
             'latitude' => 'required|unique:cities|max:255',
             'longitude' => 'required|unique:cities|max:255',
             'idCountry' => 'required'
-        ]);
-        if ($validator->fails()) {
-            return redirect('city/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        ], $messages );
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
         $city = new City();
         $city->nameCity = $request->nameCity;
         $city->latitude = $request->latitude;
         $city->longitude = $request->longitude;
         $city->idCountry = $request->idCountry;
-        $city->save() ;
-        return view('');
+        return json_encode([
+            'status' => 200,
+            'success' => $city->save()
+        ]) ;
     }
     public function getCities(){
         $cities = City::all();
-        return view('')->withCities($cities);
+        return $cities;
 
     }
 
-    public function updateCity(Request $request){
+    public function updateCity(Request $request, $id){
+        $messages = [
+            'nameCity.unique' => 'le nom de la ville existe déja',
+            'latitude.unique' => 'cette latitude a été déja enrégistrée',
+            'longitude.unique' => 'cette longitude a été déja enrégistrée'
+        ];
         $validator = Validator::make($request->all(), [
-            'nameCity' => 'required|unique:cities|max:255',
-            'latitude' => 'required|unique:cities|max:255',
-            'longitude' => 'required|unique:cities|max:255',
-            'idCountry' => 'required',
-        ]);
+            'nameCity' => 'unique:cities|max:255',
+            'latitude' => 'unique:cities|max:255',
+            'longitude' => 'unique:cities|max:255',
+        ],$messages);
         if ($validator->fails()) {
-            return redirect('city/update')
-                ->withErrors($validator)
-                ->withInput();
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
         }
-        City::where('idCity', $request->idCity)->update($request);
 
-        return view('');
+        return json_encode([
+            'status' =>200,
+            'ville modifiée' => City::where('idCity', $id)->update($request->all())
+        ]);
     }
 
-    public function deleteCity(Request $request){
-      $city = City::where('idCity', $request->idCity)->get();
-      $city->delete();
+    public function deleteCity($id){
+        $citty = City::find($id);
+        $citty->delete();
+        echo 'la ville a été supprimée';
     }
 
  // CRUD AppLog
     public function createAppLog(Request $request){
+        $messages = [
+            'logName.required' => 'le nom de l\'historique est invalide',
+             'logContent.required' => 'le contenu de l\'historique est invalide'
+
+        ];
         $validator = Validator::make($request->all(), [
             'logName' => 'required|max:255',
             'logContent' => 'required',
-        ]);
-        if ($validator->fails()) {
-            return redirect('appLog/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+        ], $messages);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+
 
         $appLog = new AppLog();
         $appLog->logName = $request->logName;
         $appLog->logContent = $request->logContent;
-        $appLog->save() ;
-        return view('');
+        return json_encode([
+            'status' => 200,
+               'success' => $appLog->save() ]);
     }
 
     public function getAppLogs(){
     $appLogs = AppLog::all();
-    return view('')->withAppLogs($appLogs);
+    return $appLogs;
     }
 
-    public function updateAppLog(Request $request){
-        $validator = Validator::make($request->all(), [
-            'logName' => 'required|max:255',
-            'logContent' => 'required',
-        ]);
-        if ($validator->fails()) {
-            return redirect('appLog/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
-        AppLog::where('idAppLog', $request->idAppLog)->update($request);
-
-        return view('');
-    }
-
-    public function deleteAppLog(Request $request){
-        $appLog = AppLog::findOrFail($request->idAppLog);
+    public function deleteAppLog($id){
+        $appLog = AppLog::find($id);
         $appLog->delete();
-
-        return view('');
+        echo 'l\'historique est supprimée';
 
     }
 
     // CRUD AppSetting
     public function createAppSetting(Request $request){
+        $messages = [
+            'settingName.required' => 'le nom du paramètre est invalide',
+            'settingName.unique' => 'ce paramètre existe déjà'
+        ];
         $validator = Validator::make($request->all(), [
-            'settingName' => 'required|max:255',
-            'nbTransactionMaxJr' => 'required|integer',
-        ]);
-        if ($validator->fails()) {
-            return redirect('appSetting/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+            'settingName' => 'required|unique:app_setting|max:255',
+        ],$messages);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+
 
         $appSetting = new AppSetting();
         $appSetting->settingName = $request->settingName;
         $appSetting->nbTransactionMaxJr = $request->nbTransactionMaxJr;
-        $appSetting->save() ;
-        return view('');
+        return json_encode([
+            'status' => 200,
+                'success' => $appSetting->save()]);
     }
 
     public function getAppSettings(){
         $appSettings = AppSetting::all();
-        return view('')->withAppSettings($appSettings);
+        return $appSettings;
     }
 
-    public function updateAppSetting(Request $request){
+    public function updateAppSetting(Request $request,$id){
+        $messages = [
+            'settingName.unique' => 'ce paramètre existe déja'
+        ];
         $validator = Validator::make($request->all(), [
-            'settingName' => 'required|max:255',
-            'nbTransactionMaxJr' => 'required|integer',
-        ]);
-        if ($validator->fails()) {
-            return redirect('appSetting/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
-        AppSetting::where('idAppSetting', $request->idAppSetting)->update($request);
+            'settingName' => 'unique:app_setting|max:255',
 
-        return view('');
+        ],$messages);
+        if ($validator->fails()) {
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+        }
+        return json_encode([
+            'status' => 200,
+            'paramètre modifié' =>  AppSetting::where('idAppSetting',$id)->update($request->all())
+        ]);
     }
 
-    public function deleteAppSetting(Request $request){
-        $appSetting = AppSetting::findOrFail($request->idAppSetting);
+    public function deleteAppSetting($id){
+        $appSetting = AppSetting::find($id);
         $appSetting->delete();
-
-        return view('');
+        echo 'Paramètre supprimée';
     }
 
    // CRUD WithdrawalFees
     public function createWithdrawalFee(Request $request){
+        $messages = [
+            'amountMin.required' => 'le montant minimum est invalide',
+            'amountMax.required' => 'le montant maximum est invalide',
+            'fee.required' => 'les frais de transaction est invalide',
+            'amountMin.unique' => 'ce montant est déja enregistré comme minimum',
+            'amountMax.unique' => 'ce montant est déja enregistré comme maximum ',
+            'fee.unique' => 'frais de retrait déja existant'
+        ];
         $validator = Validator::make($request->all(), [
-            'amountMin' => 'required',
-            'amountMax' => 'required',
-            'fee' => 'required',
-        ]);
+            'amountMin' => 'required|unique:withdrawal_fees',
+            'amountMax' => 'required|unique:withdrawal_fees',
+            'fee' => 'required|unique',
+        ],$messages);
         if ($validator->fails()) {
-            return redirect('withdrawalFee/create')
-                ->withErrors($validator)
-                ->withInput();
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
         }
 
         $withdrawalFee = new WithdrawalFee();
         $withdrawalFee->amountMin = $request->amountMin;
         $withdrawalFee->amountMax = $request->amountMax;
         $withdrawalFee->fee = $request->fee;
-        $withdrawalFee->save() ;
-        return view('');
+        return json_encode([
+            'status' => 200,
+             'success' => $withdrawalFee->save() ]);
     }
 
     public function getWithdrawalFees(){
         $withdrawalFees = WithdrawalFee::all();
-        return view('')->withWithdrawalFees($withdrawalFees);
+        return $withdrawalFees;
     }
 
-    public function updateWithdrawalFee(Request $request){
+    public function updateWithdrawalFee(Request $request,$id){
+      $messages = [
+          'amountMin.unique' => 'ce montant est déja enregistré comme minimum',
+          'amountMax.unique' => 'ce montant est déja enregistré comme maximum ',
+          'fee.unique' => 'frais de retrait déja existant'
+
+      ];
         $validator = Validator::make($request->all(), [
-            'amountMin' => 'required',
-            'amountMax' => 'required',
-            'fee' => 'required',
+            'amountMin' => 'unique:withdrawal_fees',
+            'amountMax' => 'unique:withdrawal_fees',
+            'fee' => 'unique',
+        ], $messages);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+
+
+
+        return json_encode([
+            'status' => 200,
+            'success' =>  WithdrawalFee::where('idWithdrawalFee', $id)->update($request->all())
         ]);
-        if ($validator->fails()) {
-            return redirect('withdrawalFee/update')
-                ->withErrors($validator)
-                ->withInput();
-        }
-        WithdrawalFee::where('idWithdrawalFee', $request->idWithdrawalFee)->update($request);
-
-        return view('');
     }
-    public function deleteWithdrawalFee(Request $request){
-        $withdrawalFee = WithdrawalFee::findOrFail($request->idWithdrawalFee);
+    public function deleteWithdrawalFee($id){
+        $withdrawalFee = WithdrawalFee::find($id);
         $withdrawalFee->delete();
-
-        return view('');
+        echo'frais supprimé';
     }
    //CRUD Roles
     public function createRole(Request $request){
+        $messages = [
+            'roleName.required' => 'le nom du rôle est invalide',
+            'roleLevel.required' => 'le niveau est invalide',
+            'roleName.unique' => 'ce nom existe déja pour un rôle',
+            'roleLevel.unique' => 'ce niveau existe pour un rôle ',
+
+        ];
         $validator = Validator::make($request->all(), [
             'roleName' => 'required|unique:roles|255',
-            'roleLevel' => 'required',
-        ]);
-        if ($validator->fails()) {
-            return redirect('role/create')
-                ->withErrors($validator)
-                ->withInput();
-        }
+            'roleLevel' => 'required|unique:roles',
+        ],$messages);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
         $role = new Role();
         $role->roleName = $request->roleName;
         $role->roleLevel = $request->roleLevel;
-        $role->save() ;
-        return view('');
+        return json_encode([
+            'status' => 200,
+             'enregistrement effectué' =>  $role->save()  ]);
     }
 
     public function getRoles(){
         $roles = Role::all();
-        return view('')->withroles($roles);
+        return $roles;
     }
 
-    public function updateRole(Request $request){
+    public function updateRole(Request $request,$id){
+        $messages =[
+            'roleName.unique' => 'ce nom existe déja pour un rôle',
+            'roleLevel.unique' => 'ce niveau existe pour un rôle ',
+        ];
         $validator = Validator::make($request->all(), [
-            'roleName' => 'bail|required|unique:roles|255',
-            'roleLevel' => 'required',
-        ]);
+            'roleName' => 'unique:roles|255',
+            'roleLevel' => '|unique',
+        ], $messages);
         if ($validator->fails())
-            return back()->withErrors($validator->errors()->first())->withInput();
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
 
-        Role::where('idRole', $request->idRole)->update($request);
-
-        return view('');
+        return json_encode([
+            'status' => 200,
+            'role modifié' => Role::where('idRole', $id)->update($request->all())
+        ]);
     }
-    public function deleteRole(Request $request){
-        $role = Role::findOrFail($request->idRole);
+    public function deleteRole($id){
+        $role = Role::find($id);
         $role->delete();
-
-        return view('');
+        echo'Rôle supprimé';
     }
 
 

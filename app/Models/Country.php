@@ -10,5 +10,6 @@ class Country extends Model
     use SoftDeletes;
     protected $primaryKey = 'idCountry';
     protected $table = 'countries';
+    protected $fillable = ['countryName','codeNameCountry','countryCode'];
     protected $guarded =  ['created_at', 'updated_at', 'deleted_at'];
 }
