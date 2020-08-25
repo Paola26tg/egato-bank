@@ -19,7 +19,6 @@ class CreateCustomersTable extends Migration
             $table->integer('idCity')->unsigned();
             $table->string('firsName');
             $table->string('lastName');
-            $table->string('password');
             $table->boolean('isValidated')->default(true);
             $table->boolean('isEnable')->default(true);
 

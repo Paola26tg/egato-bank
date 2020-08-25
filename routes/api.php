@@ -84,12 +84,21 @@ Route::get('innerTransaction','UsersController@getInnerTransaction');
 Route::get('/innerTransaction/find/{$id}', 'UsersController@getInnerTransactionById');
 Route::delete('/innerTransaction/delete/{$id}', 'UsersController@deleteInnerTransaction');
 
+Route::post('/DepositTransaction/store', 'UsersController@createDepositTransaction');
+Route::get('DepositTransaction','UsersController@getDepositTransactions');
+Route::get('/DepositTransaction/find/{$id}', 'UsersController@getDepositTransactionById');
+Route::delete('/DepositTransaction/delete/{$id}', 'UsersController@deleteDepositTransaction');
+
 //CUSTOMERS ROUTES
 Route::post('/customer/store','CustomerController@storeCustomer');
 Route::get('/customer','CustomerController@getCustomers');
 Route::patch('/customer/update/{$id}', 'CustomerController@updateCustomer');
 Route::get('/country/find/{$id}', 'CustomerController@findCustomer');
 Route::delete('/country/delete/{$id}', 'CustomerController@deleteCustomer');
+
+Route::post('/customerContact/store','CustomerController@storeCustomerContact');
+Route::get('/customerContact','CustomerController@getCustomerContacts');
+Route::delete('/customerContact/delete/{$id}', 'CustomerController@deleteCustomerContact');
 
 
 

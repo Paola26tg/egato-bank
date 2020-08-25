@@ -20,12 +20,15 @@ class rootController extends Controller
     // CRUD AccountCustomer
     public function createAccountCustomer(Request $request){
         $messages = [
+            'accountAmount.required' => 'le montant  est invalide',
             'accountNumber.required' => 'le numéro de compte est invalide',
             'accountNumber.unique' => 'le numéro de compte existe déja',
-            'accountAmount.required' => 'le montant  est invalide'
+            'accountPassword.required' => 'Mot de passe requis',
+            'accountPassword.unique' =>'mot de passe existant'
         ];
         $validator = Validator::make($request->all(), [
             'accountNumber' => 'bail|required|unique:account_customers|max:255',
+            'accountPassword' => 'required|unique:account_customers|max:255',
             'accountAmount' => 'required',
             'idCustomer' => 'required|integer',
             'idAgency' => 'required|integer' ,
@@ -39,8 +42,10 @@ class rootController extends Controller
         $accountCustomer = new AccountCustomer();
         $accountCustomer->accountNumber = $request->accountNumber;
         $accountCustomer->accountAmount = $request->accountAmount;
+        $accountCustomer->accountPassword = $request->accountPassword;
         $accountCustomer->idCustomer = $request->idCustomer;
         $accountCustomer->idAgency = $request->idAgency;
+
         return json_encode([
             'status' => 200,
             'success' => $accountCustomer->save()]);
@@ -72,11 +77,13 @@ class rootController extends Controller
     {
         $messages = [
             'accountNumber.unique' => 'le numéro de compte existe déja',
+            'accountPassword.unique' => 'Mot de passe existant'
         ];
 
         $validator = Validator::make($request->all(), [
             'accountNumber' => 'unique:account_customers|max:255',
-        ]);
+            'accountPassword' => 'unique:account_customers'
+        ],$messages);
         if ($validator->fails())
             return json_encode(['status' => 500,
                 'error' => $validator->errors()->first()
@@ -176,12 +183,15 @@ class rootController extends Controller
     }
 
     public function updateAgency(Request $request, $id){
+        $messages = [
+            'nameAgency.unique' => 'le nom de l\' agence est existe déja',
+            'codeAgency.unique' => 'le code de l\' agence est existe déja'
+
+        ];
         $validator = Validator::make($request->all(), [
-            'nameAgency' => 'required|unique:agencies|max:255',
-            'codeAgency' => 'required|unique:agencies|max:255',
-            'idCountry' => 'required',
-            'idCity' => 'required',
-        ]);
+            'nameAgency' => 'unique:agencies|max:255',
+            'codeAgency' => 'unique:agencies|max:255',
+        ],$messages);
         if ($validator->fails()) {
             return json_encode(['status' => 500,
                 'error' => $validator->errors()->first()

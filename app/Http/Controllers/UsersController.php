@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DepositTransaction;
 use App\Models\InnerTransaction;
 use App\Models\OuterTransaction;
 use Illuminate\Http\Request;
@@ -14,13 +15,22 @@ class UsersController extends Controller
       $messages = [
           'firstNameUser.required' => 'le prénom d\'utilisateur est invalide',
           'lastNameUser.required' =>'le nom d\'utilisateur est invalide',
-          'telUser.required' => 'numéro de telephone est invalide',
-          'telUser.unique' =>  'numéro de telephone est existant',
+          'telUser.required' => 'Numéro de telephone est invalide',
+          'telUser.unique' =>  'Numéro de telephone est existant',
+          'userPassword.required' => 'Mot de passe invalide',
+          'userPassword.unique' =>  'Mot de passe existant',
+          'userEmail.required' => 'Email est invalide',
+          'userEmail.unique' =>  'Email est existant',
+          'userSerialNumber.required' => 'Numéro de série est invalide',
+          'userSerialNumber.unique' =>  'Numéro de série existant',
       ];
         $validator = Validator::make($request->all(), [
             'firstNameUser' => 'bail|required|max:255',
             'lastNameUser' => 'required|max:255',
             'telUser' => 'required|unique:users|numeric',
+            'userPassword' => 'required|unique:users',
+            'userEmail' => 'required|unique:users',
+            'userSerialNumber' => 'required|unique:users',
             'idRole' => 'required' ,
         ],$messages);
         if ($validator->fails())
@@ -33,6 +43,9 @@ class UsersController extends Controller
             $user->firstNameUser = $request->firstNameUser;
             $user->lastNameUser = $request->firstNameUser;
             $user->telUser = $request->telUser;
+            $user->userPassword = $request->userPassword;
+            $user->userEmail = $request->userEmail;
+            $user->userSerialNumber = $request->userSerialNumber;
             $user->idRole = $request->idRole;
 
         return json_encode([
@@ -55,10 +68,17 @@ class UsersController extends Controller
 
     public function updateUser(Request $request, $id){
         $messages = [
-          'telUser.unique' =>  'numéro de telephone est existant',
+          'telUser.unique' =>  'Numéro de telephone est existant',
+            'userPassword.unique' => 'Mot de passe existant',
+            'userEmail.unique' =>  'Email existant',
+            'userSerialNumber.unique' => 'Numéro de série est existant',
             ];
         $validator = Validator::make($request->all(), [
             'telUser' => 'unique:users|numeric',
+            'userPassword' => 'unique:users',
+            'userEmail' => 'unique:users',
+            'userSerialNumber' => 'unique:users',
+
         ],$messages);
         if ($validator->fails())
             return json_encode([
@@ -73,10 +93,17 @@ class UsersController extends Controller
 
     // CRUD OuterTransaction
     public function createOuterTransaction(Request $request){
+        $messages = [
+            'transactionAmount.required' => 'Montant invalide',
+            'transactionFee.required' => 'Frais invalide'
+
+        ];
 
         $validator = Validator::make($request->all(), [
             'idAccountCustomer' => 'required',
             'idUser' => 'required',
+            'transactionAmount' =>'required',
+            'transactionFee' => 'required'
         ]);
         if ($validator->fails())
             return json_encode([
@@ -87,6 +114,8 @@ class UsersController extends Controller
         $outerTransaction = new OuterTransaction();
         $outerTransaction->idAccountCustomer = $request->idAccountCustomer;
         $outerTransaction->idUser = $request->idUser;
+        $outerTransaction->transactionAmount = $request->transactionAmount;
+        $outerTransaction->transactionFee = $request->transactionFee;
         return json_encode([
             'status' =>200,
             'success'=>$outerTransaction ]);
@@ -118,10 +147,15 @@ class UsersController extends Controller
 
     // CRUD InnerTransaction
     public function createInnerTransaction(Request $request){
+        $messages = [
+            'transactionAmount.required' => 'Montant invalide',
+
+        ];
         $validator = Validator::make($request->all(), [
             'idAccountDepart' => 'required',
             'idAccountArrive' => 'required',
-        ]);
+            'transactionAmount' => 'required'
+        ],$messages);
         if ($validator->fails())
             return json_encode([
                 'status' => 500,
@@ -132,6 +166,8 @@ class UsersController extends Controller
         $innerTransaction = new InnerTransaction();
         $innerTransaction->idAccountDepart = $request->idAccountDepart;
         $innerTransaction->idAccountArrive = $request->idAccountArrive;
+        $innerTransaction->transactionAmount = $request->transactionAmount;
+
 
          return json_encode([
             'status' => 200,
@@ -162,5 +198,59 @@ class UsersController extends Controller
         echo 'Transaction supprimée';
     }
 
+
+    //CRUD depositTransaction
+
+
+    public function createDepositTransaction(Request $request){
+        $messages = [
+            'transactionAmount.required' => 'Montant invalide',
+
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'idAccountCustomer' => 'required',
+            'idUser' => 'required',
+            'transactionAmount' => 'required'
+        ],$messages);
+        if ($validator->fails())
+            return json_encode([
+                'status' => 500,
+                'error' => $validator->errors()->first()
+            ]);
+
+        $depositTransaction = new DepositTransaction();
+        $depositTransaction->idAccountCustomer = $request->idAccountCustomer;
+        $depositTransaction->idUser = $request->idUser;
+        $depositTransaction->transactionAmount = $request->transactionAmount;
+
+        return json_encode([
+            'status' =>200,
+            'success'=>$depositTransaction ]);
+
+    }
+    public function getDepositTransactions()
+    {
+        $depositTransaction = DepositTransaction::orderByDesc('created_at')->get();
+        return $depositTransaction;
+    }
+
+    public function getDepositTransactionById($id)
+    {
+        $depositTransaction = DepositTransaction::find($id);
+        if(is_null($depositTransaction))
+            return json_encode([
+                'status' => 404,
+                'error' => 'transaction introuvable '
+            ]);
+        return $depositTransaction;
+    }
+
+    public function deleteDepositTransaction($id){
+
+        $depositTransaction = DepositTransaction::find($id);
+        $depositTransaction->delete();
+        echo'Transaction supprimé';
+    }
 
 }
